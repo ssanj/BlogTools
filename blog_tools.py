@@ -44,7 +44,7 @@ class BlogToolsCommand(sublime_plugin.WindowCommand):
           sublime.message_dialog(f"could not create {file_name}: {e}")
 
         view = self.window.open_file(file_name)
-        self.async_check_for_view(view, self.insert_snippet)
+        self.async_check_for_view(view, lambda v: self.insert_snippet(blog_title, v))
 
 
       else:
@@ -74,55 +74,30 @@ class BlogToolsCommand(sublime_plugin.WindowCommand):
     else:
       return None
 
-  def insert_snippet(self, view: sublime.View):
+  def insert_snippet(self, title: str, view: sublime.View) -> None:
     window = self.window
 
+    description = title.lower()
     if window and view:
-      snippet_file = "Packages/User/snippets/meta_md.sublime-snippet"
-      print(f"snippet: {snippet_file}")
+      # There doesn't seem to be a nice way to load snippet content with variables pre-supplied
+      # hardcoding this here for now.
+      snippet_file = \
+f"""---
+title: {title}
+author: sanjiv sahayam
+description: {description}
+tags:
+comments: true
+---
+
+$1
+"""
       print(f"view: {view}")
 
       if view.is_loading():
         print("view is still loading, giving up")
       else:
         print("view had loaded")
-        # load snippet content
-        # expand_variables with file_name
-        # insert into view
-        view.run_command("insert_snippet", { "name":  snippet_file})
+        view.run_command("insert_snippet", { "contents":  snippet_file})
     else:
       sublime.message_dialog("Could not find Window or View")
-
-  # def get_target_file(self, first_match: sublime.SymbolLocation) -> TargetFile:
-  #   file_name = first_match.path
-  #   line = first_match.row
-  #   column = first_match.col
-  #   target_file = TargetFile(file_name, line, column)
-  #   print(f"target_file: {target_file}")
-  #   return target_file
-
-  # def create_or_focus_group1(self, window: sublime.Window) -> None:
-  #   groups = window.num_groups()
-  #   active_group = window.active_group()
-  #   if groups > 1:
-  #     if active_group == 1:
-  #       print("nothing to do. Split 1 is already selected")
-  #     else:
-  #       window.focus_group(1)
-  #   else:
-  #     window.run_command('set_layout', { "cols": [0.0, 1.0], "rows": [0.0, 0.5, 1.0], "cells": [[0, 0, 1, 1], [0, 1, 1, 2]] })
-  #     window.focus_group(1)
-
-
-  # def has_selected_word(self, selection: sublime.Selection) -> Optional[str]:
-  #   if len(selection) > 0:
-  #     view = self.view
-  #     possible_word = view.substr(view.word(selection[0]))
-  #     if possible_word and possible_word.lstrip():
-  #       word = possible_word.lstrip()
-  #     else:
-  #       word = None
-  #   else:
-  #     word = None
-
-  #   return word
