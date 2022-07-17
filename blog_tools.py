@@ -1,6 +1,6 @@
 import sublime
 import sublime_plugin
-from typing import Optional
+from typing import Callable, Optional
 # from OpenSplit.target_file import TargetFile
 from datetime import date
 
@@ -18,28 +18,8 @@ class BlogToolsCommand(sublime_plugin.WindowCommand):
         on_cancel = None,
         on_change = None
       )
-      # if (text := self.has_selected_word(view.sel())) is not None:
-      #   print(f"found symbol: {text}")
-      #   symbol = window.symbol_locations(text, type=sublime.SYMBOL_TYPE_DEFINITION)
-
-      #   if len(symbol) > 0:
-      #     target_file = self.get_target_file(symbol[0])
-      #     # if the target file open in group 0?
-      #      # find file in group 0
-      #      # close file in group 0
-
-      #     # open file in group 1
-      #     self.create_or_focus_group1(window)
-      #     if target_file:
-      #       window.open_file(target_file.encoded_str(), sublime.ENCODED_POSITION, group=1)
-      #     else:
-      #       print("no valid target file")
-      #   else:
-      #     print("symbol is empty")
-      # else:
-      #   print("Invalid word selected")
     else:
-      print("No active window found")
+      sublime.message_dialog("No active window found")
 
   def post_name_given(self, input: str) -> None:
     window = self.window
@@ -59,12 +39,12 @@ class BlogToolsCommand(sublime_plugin.WindowCommand):
         file_name: str = f"{folder}/posts/{file_name_with_date}"
         try:
           with open(file_name, 'x') as f: #create only if it does not exist
-            f.write(blog_title)
+            f.write("")
         except Exception as e:
           sublime.message_dialog(f"could not create {file_name}: {e}")
 
         view = self.window.open_file(file_name)
-        self.async_check_for_view(view)
+        self.async_check_for_view(view, self.insert_snippet)
 
 
       else:
@@ -72,16 +52,16 @@ class BlogToolsCommand(sublime_plugin.WindowCommand):
     else:
       sublime.message_dialog("Could not find Window")
 
-  def async_check_for_view(self, view: sublime.View, retries: int = 4) -> None:
+  def async_check_for_view(self, view: sublime.View, callback: Callable[[sublime.View], None], retries: int = 8) -> None:
     if view.is_loading():
       if retries >= 0:
         new_retries = retries - 1
-        print("waiting for view, retries left: {new_retries}")
-        sublime.set_timeout_async(lambda: self.async_check_for_view(view, new_retries), 500)
+        print(f"waiting for view, retries left: {new_retries}")
+        sublime.set_timeout_async(lambda: self.async_check_for_view(view, callback, new_retries), 250)
       else:
         sublime.message_dialog("View is taking too long to load. Giving up.")
     else:
-      self.insert_snippet(view)
+      callback(view)
 
   def get_folder_name(self) -> Optional[str]:
     window = self.window
@@ -103,9 +83,12 @@ class BlogToolsCommand(sublime_plugin.WindowCommand):
       print(f"view: {view}")
 
       if view.is_loading():
-        print("view is loading")
+        print("view is still loading, giving up")
       else:
         print("view had loaded")
+        # load snippet content
+        # expand_variables with file_name
+        # insert into view
         view.run_command("insert_snippet", { "name":  snippet_file})
     else:
       sublime.message_dialog("Could not find Window or View")
