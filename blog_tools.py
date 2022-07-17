@@ -42,26 +42,46 @@ class BlogToolsCommand(sublime_plugin.WindowCommand):
       print("No active window found")
 
   def post_name_given(self, input: str) -> None:
-    today = date.today()
-    formatted_date = today.strftime("%Y-%m-%d")
+    window = self.window
 
-    file_name_title: str = input.lower().replace(" ", "-")
-    file_name_with_date: str = f"{formatted_date}-{file_name_title}.md"
-    blog_title: str = input.title()
+    if window:
+      today = date.today()
+      formatted_date = today.strftime("%Y-%m-%d")
 
-    print(f"Blog title: {blog_title}")
-    print(f"file_name: {file_name_with_date}")
+      file_name_title: str = input.lower().replace(" ", "-")
+      file_name_with_date: str = f"{formatted_date}-{file_name_title}.md"
+      blog_title: str = input.title()
 
-    if folder := self.get_folder_name():
-      file_name: str = f"{folder}/posts/{file_name_with_date}"
-      try:
-        with open(file_name, 'x') as f: #create only if it does not exist
-          f.write(blog_title)
+      print(f"Blog title: {blog_title}")
+      print(f"file_name: {file_name_with_date}")
 
-      except Exception as e:
-        sublime.message_dialog(f"could not create {file_name}: {e}")
+      if folder := self.get_folder_name():
+        file_name: str = f"{folder}/posts/{file_name_with_date}"
+        try:
+          with open(file_name, 'x') as f: #create only if it does not exist
+            f.write(blog_title)
+        except Exception as e:
+          sublime.message_dialog(f"could not create {file_name}: {e}")
+
+        view = self.window.open_file(file_name)
+        self.async_check_for_view(view)
+
+
+      else:
+        sublime.message_dialog("Could find current directory")
     else:
-      sublime.message_dialog("Could find current directory")
+      sublime.message_dialog("Could not find Window")
+
+  def async_check_for_view(self, view: sublime.View, retries: int = 4) -> None:
+    if view.is_loading():
+      if retries >= 0:
+        new_retries = retries - 1
+        print("waiting for view, retries left: {new_retries}")
+        sublime.set_timeout_async(lambda: self.async_check_for_view(view, new_retries), 500)
+      else:
+        sublime.message_dialog("View is taking too long to load. Giving up.")
+    else:
+      self.insert_snippet(view)
 
   def get_folder_name(self) -> Optional[str]:
     window = self.window
@@ -73,6 +93,22 @@ class BlogToolsCommand(sublime_plugin.WindowCommand):
         return None
     else:
       return None
+
+  def insert_snippet(self, view: sublime.View):
+    window = self.window
+
+    if window and view:
+      snippet_file = "Packages/User/snippets/meta_md.sublime-snippet"
+      print(f"snippet: {snippet_file}")
+      print(f"view: {view}")
+
+      if view.is_loading():
+        print("view is loading")
+      else:
+        print("view had loaded")
+        view.run_command("insert_snippet", { "name":  snippet_file})
+    else:
+      sublime.message_dialog("Could not find Window or View")
 
   # def get_target_file(self, first_match: sublime.SymbolLocation) -> TargetFile:
   #   file_name = first_match.path
