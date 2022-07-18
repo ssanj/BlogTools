@@ -93,6 +93,7 @@ class BlogToolsCommand(sublime_plugin.WindowCommand):
       return sublime.expand_variables(f"$packages/User/snippets/{snippet_name}.sublime-snippet", window.extract_variables())
     else:
       sublime.message_dialog("Could not find Window")
+      return None
 
   def get_folder_name(self) -> Optional[str]:
     window = self.window
