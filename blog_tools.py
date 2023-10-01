@@ -9,7 +9,7 @@ class BlogToolsCommand(sublime_plugin.WindowCommand):
     window = self.window
 
     if window:
-      print("found active window")
+      print("found active window1")
       #show_input_panel(caption: str, initial_text: str, on_done: Optional[Callable[[str], None]], on_change: Optional[Callable[[str], None]], on_cancel: Optional[Callable[[], None]])
       window.show_input_panel(
         caption = "Blog title",
@@ -52,7 +52,7 @@ class BlogToolsCommand(sublime_plugin.WindowCommand):
             expanded_snippet = sublime.expand_variables(template_content, {"1": blog_title, "2": blog_title.lower(), "3": "", "4": "inspiration awaits..."})
             print(f"expanded snippet: {expanded_snippet}")
             if folder := self.get_folder_name():
-              file_name: str = f"{folder}/posts/{file_name_with_date}"
+              file_name: str = f"{folder}/data/posts/{file_name_with_date}"
               try:
                 with open(file_name, 'x') as f: #create only if it does not exist
                   f.write(expanded_snippet)
